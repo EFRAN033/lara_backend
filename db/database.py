@@ -39,6 +39,36 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     role = relationship("Role", back_populates="users")
+    
+    # --- ✨ RELACIONES INVERSAS AÑADIDAS ---
+    student_info = relationship("Student", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    teacher_info = relationship("Teacher", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+
+# --- ✨ NUEVOS MODELOS 'Student' y 'Teacher' ---
+class Student(Base):
+    __tablename__ = "students"
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Aquí puedes añadir otros campos específicos del estudiante que tienes en tu BD
+    # student_code = Column(String(50), unique=True)
+    # date_of_birth = Column(Date)
+    
+    user = relationship("User", back_populates="student_info")
+
+
+class Teacher(Base):
+    __tablename__ = "teachers"
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Aquí puedes añadir otros campos específicos del profesor que tienes en tu BD
+    # specialty = Column(String(100))
+    # hire_date = Column(Date)
+    
+    user = relationship("User", back_populates="teacher_info")
+
 
 def get_db():
     db = SessionLocal()

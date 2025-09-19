@@ -9,7 +9,8 @@ from uuid import UUID
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
-from db.database import get_db, User, Role 
+# ✨ CAMBIO 1: Importa Student y Teacher
+from db.database import get_db, User, Role, Student, Teacher 
 
 # --- CONFIGURACIÓN DE SEGURIDAD ---
 SECRET_KEY = "tu_super_secreto_aqui"  # ¡Es crucial cambiar esto en producción!
@@ -32,12 +33,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # --- MODELOS PYDANTIC (Esquemas de Datos) ---
 
+# --- ✨ CAMBIO 2: Haz que dni y username sean opcionales ---
 class UserBase(BaseModel):
     full_name: str
-    dni: str
+    dni: str | None = None
     email: str
     phone: str | None = None
-    username: str
+    username: str | None = None
 
 class UserCreate(UserBase):
     password: str
@@ -83,13 +85,12 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == payload.username).first():
         raise HTTPException(status_code=409, detail="El nombre de usuario ya está en uso")
 
-    # Mapear el rol de texto a su ID correspondiente en la base de datos
-    role_map = {"student": 2, "teacher": 3} # Asegúrate de que estos IDs existan en tu tabla 'roles'
+    role_map = {"student": 2, "teacher": 3}
     role_id = role_map.get(payload.role)
     if not role_id:
         raise HTTPException(status_code=400, detail="Rol inválido. Debe ser 'student' o 'teacher'.")
 
-    # Crear el nuevo objeto de usuario con los datos del payload
+    # 1. Crear el usuario
     user = User(
         full_name=payload.full_name,
         email=payload.email,
@@ -104,6 +105,23 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     
+    # --- ✨ CAMBIO 3: Añade el registro de Student o Teacher ---
+    try:
+        if payload.role == 'student':
+            student = Student(user_id=user.id)
+            db.add(student)
+        elif payload.role == 'teacher':
+            teacher = Teacher(user_id=user.id)
+            db.add(teacher)
+        
+        db.commit()
+        db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        db.delete(user)
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Error al crear el perfil del rol: {e}")
+    
     return user
 
 @app.post("/login", response_model=Token)
@@ -117,7 +135,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Crear el payload del token con la información necesaria para el frontend
     access_token_data = {
         "sub": user.email,
         "full_name": user.full_name,
@@ -142,7 +159,6 @@ def update_user(user_id: UUID, payload: UserUpdate, db: Session = Depends(get_db
 
     update_data = payload.model_dump(exclude_unset=True)
     
-    # Si se envía una nueva contraseña, se hashea.
     if "password" in update_data and update_data["password"]:
         user.password_hash = pwd_context.hash(update_data["password"])
         del update_data["password"]
@@ -159,7 +175,7 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     """Elimina un usuario de la base de datos."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")c
         
     db.delete(user)
     db.commit()
