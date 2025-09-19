@@ -175,7 +175,7 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     """Elimina un usuario de la base de datos."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")c
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
     db.delete(user)
     db.commit()
