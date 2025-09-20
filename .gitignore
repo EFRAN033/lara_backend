@@ -1,2 +1,43 @@
-.env
+# Archivos de entorno virtual
 venv
+.venv
+env
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de dependencias y builds
+*.egg-info/
+dist/
+build/
+wheels/
+pip-wheel-metadata/
+lib/
+lib64/
+include/
+share/
+bin/
+
+# Bases de datos locales
+*.sqlite3
+*.db
+
+# Archivos de configuración de IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
