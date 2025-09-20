@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from db.database import get_db, User, Role, Student, Teacher 
 
 # --- CONFIGURACIÓN DE SEGURIDAD ---
-SECRET_KEY = "tu_super_secreto_aqui"  # ¡Es crucial cambiar esto en producción!
+SECRET_KEY = ""  # ¡Es crucial cambiar esto en producción!
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
